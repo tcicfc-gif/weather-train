@@ -119,10 +119,9 @@
       ]
     };
 
-    // OpenWeather API Key 설정
-    // 로컬 실행 시 "__WEATHER_API_KEY__" 자리에 실제 API Key를 기입하시거나,
-    // Vercel 환경변수(WEATHER_API_KEY)를 빌드 타임에 주입하도록 구성합니다.
-    const API_KEY = "__WEATHER_API_KEY__";
+    // 로컬 (file:/// 더블클릭) 테스트용 API Key 설정
+    // 깃허브 업로드 시에는 보안을 위해 비워두시는 것을 권장하며, Vercel 배포 시에는 자동으로 Vercel 서버리스 백엔드를 이용해 조회합니다.
+    const LOCAL_API_KEY = "";
 
     function App() {
       const [selectedLine, setSelectedLine] = useState("경부선");
@@ -143,21 +142,23 @@
 
       // 날씨 데이터 가져오기
       const fetchWeather = async (lat, lon) => {
-        if (!API_KEY || API_KEY === "__WEATHER_API_KEY__") {
-          setError("API Key가 설정되지 않았습니다. Vercel 환경 변수 혹은 코드 내 설정을 확인해 주세요.");
-          return;
-        }
         setLoading(true);
         setError(null);
         try {
-          const response = await fetch(
-            `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${API_KEY}&units=metric&lang=kr`
-          );
+          let response;
+          // 로컬 API 키가 설정되어 있으면 직접 API 호출 (더블 클릭 로컬 실행용)
+          if (LOCAL_API_KEY && LOCAL_API_KEY !== "__WEATHER_API_KEY__") {
+            response = await fetch(
+              `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${LOCAL_API_KEY}&units=metric&lang=kr`
+            );
+          } else {
+            // 기본 배포 환경에서는 Vercel 서버리스 백엔드(/api/weather) 호출
+            response = await fetch(`/api/weather?lat=${lat}&lon=${lon}`);
+          }
+
           if (!response.ok) {
-            if (response.status === 401) {
-              throw new Error("유효하지 않은 API Key입니다. 키를 다시 확인해 주세요.");
-            }
-            throw new Error("날씨 정보를 가져오는 중 오류가 발생했습니다.");
+            const errData = await response.json().catch(() => ({}));
+            throw new Error(errData.error || "날씨 정보를 가져오는 중 오류가 발생했습니다.");
           }
           const data = await response.json();
           setWeather({
