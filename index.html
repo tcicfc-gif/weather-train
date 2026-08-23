@@ -521,30 +521,8 @@
                 </div>
               )}
             </div>
-          </main>{weather.feelsLike}°C</span>
-                    </div>
 
-                    {/* 습도 */}
-                    <div className="p-5 md:p-7 flex flex-col items-center gap-2 text-center">
-                      <span className="opacity-75 text-xs font-bold uppercase tracking-wider flex items-center gap-1.5">
-                        <Icons.Droplets />
-                        습도
-                      </span>
-                      <span className="text-lg md:text-2xl font-bold">{weather.humidity}%</span>
-                    </div>
 
-                    {/* 풍속 */}
-                    <div className="p-5 md:p-7 flex flex-col items-center gap-2 text-center">
-                      <span className="opacity-75 text-xs font-bold uppercase tracking-wider flex items-center gap-1.5">
-                        <Icons.Wind />
-                        바람 세기
-                      </span>
-                      <span className="text-lg md:text-2xl font-bold">{weather.windSpeed} m/s</span>
-                    </div>
-                  </div>
-                </div>
-              ) : null}
-            </div>
           </main>
 
           <footer className="bg-slate-100 border-t border-slate-200 mt-12 py-6 text-center text-xs text-slate-500">
