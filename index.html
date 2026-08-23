@@ -259,7 +259,22 @@
             };
           case "snow":
             return {
-                  return (
+              bg: "from-slate-100 to-white",
+              cardBg: "bg-white text-slate-800",
+              accentColor: "text-blue-600",
+              shadowColor: "shadow-blue-100"
+            };
+          default:
+            return {
+              bg: "from-blue-600 to-indigo-700",
+              cardBg: "bg-white",
+              accentColor: "text-blue-600",
+              shadowColor: "shadow-blue-100"
+            };
+        }
+      }, [weather]);
+
+        return (
         <div className="flex flex-col min-h-screen">
           {/* Header */}
           <header className={`bg-gradient-to-r ${weatherTheme.bg} text-white shadow-lg transition-all duration-700`}>
