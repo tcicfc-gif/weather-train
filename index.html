@@ -259,29 +259,7 @@
             };
           case "snow":
             return {
-              bg: "from-sky-200 to-blue-400",
-              cardBg: "bg-white text-slate-800",
-              accentColor: "text-sky-500",
-              shadowColor: "shadow-blue-500/10"
-            };
-          case "thunderstorm":
-            return {
-              bg: "from-purple-800 to-slate-900",
-              cardBg: "bg-white text-slate-800",
-              accentColor: "text-purple-700",
-              shadowColor: "shadow-purple-100"
-            };
-          default:
-            return {
-              bg: "from-blue-600 to-indigo-700",
-              cardBg: "bg-white text-slate-800",
-              accentColor: "text-blue-600",
-              shadowColor: "shadow-blue-100"
-            };
-        }
-      }, [weather]);
-
-      return (
+                  return (
         <div className="flex flex-col min-h-screen">
           {/* Header */}
           <header className={`bg-gradient-to-r ${weatherTheme.bg} text-white shadow-lg transition-all duration-700`}>
@@ -298,124 +276,164 @@
             </div>
           </header>
 
-          <main className="flex-grow max-w-4xl w-full mx-auto px-4 py-6 md:py-10 flex flex-col gap-6 md:gap-8">
-
-            {/* 통합 검색창 */}
-            <div className="relative">
-              <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none text-slate-400">
-                <Icons.Search />
+          <main className="flex-grow max-w-6xl w-full mx-auto px-4 py-6 md:py-10 flex flex-col md:flex-row gap-6">
+            {/* 좌측 영역: 검색, 노선 선택, 노선도 */}
+            <div className="md:w-1/3 lg:w-1/3 shrink-0 flex flex-col gap-6">
+              {/* 통합 검색창 */}
+              <div className="relative">
+                <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none text-slate-400">
+                  <Icons.Search />
+                </div>
+                <input
+                  type="text"
+                  placeholder="찾으시는 역 이름을 입력해 보세요"
+                  value={searchQuery}
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value);
+                    setIsDropdownOpen(true);
+                  }}
+                  onFocus={() => setIsDropdownOpen(true)}
+                  className="w-full pl-12 pr-4 py-3.5 rounded-2xl border border-slate-200 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white text-sm transition-all placeholder:text-slate-400"
+                />
+                
+                {/* 검색 추천 목록 */}
+                {isDropdownOpen && searchQuery && (
+                  <div className="absolute z-20 w-full mt-2 bg-white border border-slate-200 rounded-2xl shadow-xl max-h-60 overflow-y-auto divide-y divide-slate-100">
+                    {filteredStations.length > 0 ? (
+                      filteredStations.map(station => (
+                        <button
+                          key={station.id}
+                          onClick={() => {
+                            setSelectedStation(station);
+                            // 해당 역의 대표 노선으로 탭도 같이 변경
+                            if (!station.lines.includes(selectedLine)) {
+                              setSelectedLine(station.lines[0]);
+                            }
+                            setSearchQuery("");
+                            setIsDropdownOpen(false);
+                          }}
+                          className="w-full text-left px-5 py-3.5 hover:bg-slate-50 transition flex items-center justify-between"
+                        >
+                          <span className="font-semibold text-slate-700">{station.name}역</span>
+                          <div className="flex gap-1">
+                            {station.lines.map(line => (
+                              <span key={line} className="text-[10px] font-medium bg-slate-100 text-slate-500 px-2 py-0.5 rounded">
+                                {line}
+                              </span>
+                            ))}
+                          </div>
+                        </button>
+                      ))
+                    ) : (
+                      <div className="p-4 text-center text-sm text-slate-400">
+                        검색 결과가 없습니다.
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
-              <input
-                type="text"
-                placeholder="찾으시는 역 이름을 입력해 보세요 (예: 대전, 광주송정, 여수엑스포)"
-                value={searchQuery}
-                onChange={(e) => {
-                  setSearchQuery(e.target.value);
-                  setIsDropdownOpen(true);
-                }}
-                onFocus={() => setIsDropdownOpen(true)}
-                className="w-full pl-12 pr-4 py-4 rounded-2xl border border-slate-200 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white text-base transition-all placeholder:text-slate-400"
-              />
-              
-              {/* 검색 추천 목록 */}
-              {isDropdownOpen && searchQuery && (
-                <div className="absolute z-10 w-full mt-2 bg-white border border-slate-200 rounded-2xl shadow-xl max-h-60 overflow-y-auto divide-y divide-slate-100">
-                  {filteredStations.length > 0 ? (
-                    filteredStations.map(station => (
+
+              {/* 노선 선택 버튼 그룹 */}
+              <div className="flex flex-col gap-3">
+                <span className="text-xs font-bold text-slate-400 tracking-wider uppercase">철도 노선 선택</span>
+                <div className="flex flex-wrap gap-2">
+                  {Object.keys(STATIONS).map((line) => (
+                    <button
+                      key={line}
+                      onClick={() => handleLineChange(line)}
+                      className={`px-4 py-2.5 rounded-xl font-bold text-xs transition-all shadow-sm ${
+                        selectedLine === line
+                          ? "bg-slate-800 text-white ring-2 ring-slate-800 ring-offset-2"
+                          : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"
+                      }`}
+                    >
+                      {line}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* 세로형 철도 노선도 (Timeline / Route Map 스타일) */}
+              <div className="bg-white border border-slate-200 rounded-3xl p-5 shadow-sm flex flex-col gap-4">
+                <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                  <span className="text-sm font-bold text-slate-700 flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-indigo-600 animate-pulse"></span>
+                    {selectedLine} 노선도
+                  </span>
+                  <span className="text-[10px] text-slate-400 font-medium">역 선택 가능</span>
+                </div>
+                
+                <div className="relative pl-8 flex flex-col max-h-[380px] overflow-y-auto pr-2 scrollbar-thin">
+                  {/* 세로 연결 가이드 선 */}
+                  <div className="absolute left-[14px] top-4 bottom-4 w-1 bg-slate-100 rounded-full"></div>
+                  
+                  {STATIONS[selectedLine].map((station, index) => {
+                    const isSelected = selectedStation.id === station.id && selectedStation.name === station.name;
+                    return (
                       <button
                         key={station.id}
                         onClick={() => {
                           setSelectedStation(station);
-                          // 해당 역의 대표 노선으로 탭도 같이 변경
-                          if (!station.lines.includes(selectedLine)) {
-                            setSelectedLine(station.lines[0]);
-                          }
                           setSearchQuery("");
-                          setIsDropdownOpen(false);
                         }}
-                        className="w-full text-left px-5 py-3.5 hover:bg-slate-50 transition flex items-center justify-between"
+                        className="relative pl-8 py-2.5 flex items-center gap-3 text-left w-full group transition-all"
                       >
-                        <span className="font-semibold text-slate-700">{station.name}역</span>
-                        <div className="flex gap-1">
-                          {station.lines.map(line => (
-                            <span key={line} className="text-[10px] font-medium bg-slate-100 text-slate-500 px-2 py-0.5 rounded">
-                              {line}
+                        {/* 원형 노선 노드 */}
+                        <div className="absolute left-0 w-8 h-8 -ml-8 flex items-center justify-center z-10">
+                          <div className={`w-3.5 h-3.5 rounded-full border-4 transition-all duration-300 ${
+                            isSelected 
+                              ? "bg-indigo-600 border-indigo-600 scale-125 ring-4 ring-indigo-100" 
+                              : "bg-white border-slate-300 group-hover:border-slate-400 group-hover:scale-110"
+                          }`}></div>
+                          {isSelected && (
+                            <span className="absolute inline-flex h-6 w-6 rounded-full bg-indigo-400 opacity-20 animate-ping"></span>
+                          )}
+                        </div>
+
+                        {/* 역 텍스트 */}
+                        <div className="flex-grow flex items-center justify-between">
+                          <span className={`text-sm transition-all duration-200 ${
+                            isSelected 
+                              ? "font-extrabold text-indigo-600 text-base" 
+                              : "font-semibold text-slate-500 group-hover:text-slate-800"
+                          }`}>
+                            {station.name}역
+                          </span>
+                          {isSelected && (
+                            <span className="text-[10px] bg-indigo-50 text-indigo-600 font-bold px-2 py-0.5 rounded-md">
+                              조회중
                             </span>
-                          ))}
+                          )}
                         </div>
                       </button>
-                    ))
-                  ) : (
-                    <div className="p-4 text-center text-sm text-slate-400">
-                      검색 결과가 없습니다.
-                    </div>
-                  )}
+                    );
+                  })}
                 </div>
-              )}
-            </div>
-
-            {/* 노선 선택 버튼 그룹 */}
-            <div className="flex flex-col gap-3">
-              <span className="text-sm font-semibold text-slate-500 tracking-wider">노선별 날씨 조회</span>
-              <div className="flex flex-wrap gap-2">
-                {Object.keys(STATIONS).map((line) => (
-                  <button
-                    key={line}
-                    onClick={() => handleLineChange(line)}
-                    className={`px-5 py-3 rounded-2xl font-semibold text-sm transition-all shadow-sm ${
-                      selectedLine === line
-                        ? "bg-slate-800 text-white ring-2 ring-slate-800 ring-offset-2"
-                        : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"
-                    }`}
-                  >
-                    {line}
-                  </button>
-                ))}
               </div>
             </div>
 
-            {/* 역 선택 그룹 (선택한 노선 내 역 리스트) */}
-            <div className="flex flex-col gap-3">
-              <span className="text-sm font-semibold text-slate-500 tracking-wider">역 선택</span>
-              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2">
-                {STATIONS[selectedLine].map((station) => (
-                  <button
-                    key={station.id}
-                    onClick={() => {
-                      setSelectedStation(station);
-                      setSearchQuery("");
-                    }}
-                    className={`py-3 px-2 rounded-xl text-sm font-medium transition-all text-center truncate ${
-                      selectedStation.id === station.id && selectedStation.name === station.name
-                        ? "bg-indigo-600 text-white font-bold shadow-md shadow-indigo-100 scale-105"
-                        : "bg-white text-slate-700 border border-slate-200 hover:bg-slate-50"
-                    }`}
-                  >
-                    {station.name}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* 날씨 정보 및 로딩/에러 표시 카드 */}
-            <div className="mt-2">
+            {/* 우측 영역: 상세 날씨 정보 카드 */}
+            <div className="flex-grow flex flex-col gap-6">
               {loading ? (
-                <div className="bg-white rounded-3xl p-16 shadow-sm border border-slate-100 flex flex-col items-center justify-center gap-4">
+                <div className="bg-white rounded-3xl p-16 shadow-sm border border-slate-100 flex flex-col items-center justify-center gap-4 h-full min-h-[300px]">
                   <div className="w-10 h-10 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
                   <span className="text-sm text-slate-400 font-medium">{selectedStation.name}역 날씨 정보를 조회하고 있습니다...</span>
                 </div>
               ) : error ? (
-                <div className="bg-red-50 border border-red-200 rounded-3xl p-8 text-center text-red-800">
-                  <h3 className="font-bold mb-2">날씨 조회 실패</h3>
-                  <p className="text-sm">{error}</p>
+                <div className="bg-red-50 border border-red-200 rounded-3xl p-12 text-center text-red-800 h-full min-h-[300px] flex flex-col items-center justify-center gap-3">
+                  <div className="text-red-400 mb-1">
+                    <Icons.Info />
+                  </div>
+                  <h3 className="font-extrabold text-lg">날씨 조회 실패</h3>
+                  <p className="text-sm max-w-md leading-relaxed">{error}</p>
                 </div>
               ) : weather ? (
-                <div className={`rounded-3xl shadow-xl overflow-hidden transition-all duration-700 hover:shadow-2xl ${weatherTheme.cardBg}`}>
+                <div className={`rounded-3xl shadow-xl overflow-hidden transition-all duration-700 hover:shadow-2xl h-full flex flex-col justify-between ${weatherTheme.cardBg}`}>
                   {/* 날씨 정보 카드 메인 헤더 */}
-                  <div className="p-6 md:p-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 border-b border-slate-100/10">
+                  <div className="p-8 md:p-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 border-b border-slate-100/10 flex-grow">
                     <div>
                       <div className="flex items-center gap-2.5">
-                        <span className="text-xs font-bold tracking-widest uppercase bg-black/10 px-2.5 py-1 rounded-full text-current">
+                        <span className="text-xs font-bold tracking-widest uppercase bg-black/10 px-3 py-1.5 rounded-full text-current">
                           {selectedLine}
                         </span>
                         <button
@@ -426,25 +444,25 @@
                           <Icons.Refresh />
                         </button>
                       </div>
-                      <h2 className="text-3xl md:text-4xl font-extrabold mt-3 tracking-tight">
+                      <h2 className="text-4xl md:text-5xl font-black mt-5 tracking-tight">
                         {selectedStation.name}역 날씨
                       </h2>
-                      <p className="text-xs opacity-75 mt-1.5">위도: {selectedStation.lat.toFixed(4)} / 경도: {selectedStation.lon.toFixed(4)}</p>
+                      <p className="text-xs opacity-75 mt-2 font-medium">위도: {selectedStation.lat.toFixed(4)} / 경도: {selectedStation.lon.toFixed(4)}</p>
                     </div>
 
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-6">
                       {/* 날씨 이미지 */}
                       <img
                         src={`https://openweathermap.org/img/wn/${weather.iconCode}@4x.png`}
                         alt={weather.description}
-                        className="w-20 h-20 md:w-24 md:h-24 drop-shadow-md animate-bounce"
-                        style={{ animationDuration: '3s' }}
+                        className="w-24 h-24 md:w-32 md:h-32 drop-shadow-lg animate-bounce"
+                        style={{ animationDuration: '3.s' }}
                       />
                       <div>
-                        <div className="text-4xl md:text-5xl font-black tracking-tighter">
+                        <div className="text-5xl md:text-6xl font-black tracking-tighter">
                           {weather.temp}°C
                         </div>
-                        <div className="text-sm font-semibold capitalize opacity-85 mt-1">
+                        <div className="text-base font-bold capitalize opacity-85 mt-2">
                           {weather.description}
                         </div>
                       </div>
@@ -452,14 +470,43 @@
                   </div>
 
                   {/* 세부 기상 지표 그리드 */}
-                  <div className="grid grid-cols-3 divide-x divide-slate-100/15 bg-black/5">
+                  <div className="grid grid-cols-3 divide-x divide-slate-100/15 bg-black/10">
                     {/* 체감온도 */}
-                    <div className="p-5 md:p-7 flex flex-col items-center gap-2 text-center">
-                      <span className="opacity-75 text-xs font-bold uppercase tracking-wider flex items-center gap-1.5">
+                    <div className="p-6 md:p-8 flex flex-col items-center gap-2 text-center">
+                      <span className="opacity-75 text-xs font-bold uppercase tracking-wider flex items-center gap-2">
                         <Icons.Temp />
                         체감 온도
                       </span>
-                      <span className="text-lg md:text-2xl font-bold">{weather.feelsLike}°C</span>
+                      <span className="text-xl md:text-3xl font-extrabold">{weather.feelsLike}°C</span>
+                    </div>
+
+                    {/* 습도 */}
+                    <div className="p-6 md:p-8 flex flex-col items-center gap-2 text-center">
+                      <span className="opacity-75 text-xs font-bold uppercase tracking-wider flex items-center gap-2">
+                        <Icons.Droplets />
+                        습도
+                      </span>
+                      <span className="text-xl md:text-3xl font-extrabold">{weather.humidity}%</span>
+                    </div>
+
+                    {/* 풍속 */}
+                    <div className="p-6 md:p-8 flex flex-col items-center gap-2 text-center">
+                      <span className="opacity-75 text-xs font-bold uppercase tracking-wider flex items-center gap-2">
+                        <Icons.Wind />
+                        바람 세기
+                      </span>
+                      <span className="text-xl md:text-3xl font-extrabold">{weather.windSpeed} m/s</span>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="bg-white rounded-3xl p-16 shadow-sm border border-slate-100 flex flex-col items-center justify-center gap-4 h-full min-h-[300px]">
+                  <Icons.Train />
+                  <span className="text-sm text-slate-400 font-medium">좌측 노선도에서 역을 선택하면 실시간 날씨가 표시됩니다.</span>
+                </div>
+              )}
+            </div>
+          </main>{weather.feelsLike}°C</span>
                     </div>
 
                     {/* 습도 */}
